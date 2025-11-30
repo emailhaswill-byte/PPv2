@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Lightbulb } from 'lucide-react';
-import { TIPS_OF_THE_DAY } from '../constants';
+import { TIPS_OF_THE_DAY } from '../constants.ts';
 
 export const TipOfTheDay: React.FC = () => {
   const [tip, setTip] = useState('');

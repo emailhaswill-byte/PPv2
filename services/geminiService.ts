@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { RockAnalysis } from "../types";
+import { RockAnalysis } from "../types.ts";
 
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

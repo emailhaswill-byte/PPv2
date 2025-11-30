@@ -1,5 +1,5 @@
 import React from 'react';
-import { SavedScan } from '../types';
+import { SavedScan } from '../types.ts';
 import { ArrowLeft, Trash2, Calendar } from 'lucide-react';
 
 interface GalleryViewProps {

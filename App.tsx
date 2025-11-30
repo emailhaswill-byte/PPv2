@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { identifyRock } from './services/geminiService';
-import { RockAnalysis, AppView, SavedScan } from './types';
-import { Button } from './components/Button';
-import { TipOfTheDay } from './components/TipOfTheDay';
-import { ResultsView } from './components/ResultsView';
-import { GalleryView } from './components/GalleryView';
+import { identifyRock } from './services/geminiService.ts';
+import { RockAnalysis, AppView, SavedScan } from './types.ts';
+import { Button } from './components/Button.tsx';
+import { TipOfTheDay } from './components/TipOfTheDay.tsx';
+import { ResultsView } from './components/ResultsView.tsx';
+import { GalleryView } from './components/GalleryView.tsx';
 import { Upload, Camera, Loader2, Image as ImageIcon, Heart, Pickaxe, X, Aperture, Smartphone, ShieldCheck } from 'lucide-react';
 
 const App: React.FC = () => {

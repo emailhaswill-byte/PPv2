@@ -13,6 +13,9 @@
     
     <link rel="manifest" href="/manifest.json" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Babel for in-browser transpilation of JSX/TSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
@@ -38,6 +41,13 @@
           }
         }
       }
+      
+      // Polyfill process.env for the browser environment to prevent crash
+      window.process = {
+        env: {
+          API_KEY: '' // This must be replaced/injected with your actual key
+        }
+      };
     </script>
   <script type="importmap">
 {
@@ -54,6 +64,7 @@
 </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-gold-500 selection:text-slate-900">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- Changed type to text/babel and added .tsx extension reference -->
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
   </body>
 </html>

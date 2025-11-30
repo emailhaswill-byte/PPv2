@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { RockAnalysis, AlternativeRock } from '../types';
-import { Button } from './Button';
-import { ComparisonSlider } from './ComparisonSlider';
+import { RockAnalysis, AlternativeRock } from '../types.ts';
+import { Button } from './Button.tsx';
+import { ComparisonSlider } from './ComparisonSlider.tsx';
 import { 
   ArrowLeft, 
   DollarSign, 

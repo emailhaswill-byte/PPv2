@@ -1,4 +1,4 @@
-import { RockAnalysis } from './types';
+import { RockAnalysis } from './types.ts';
 
 export const TIPS_OF_THE_DAY = [
   "Gold is often found in quartz veins. Look for white quartz rocks with rusty streaks.",
