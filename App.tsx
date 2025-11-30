@@ -38,41 +38,117 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Helper: Compresses and formats any image source to a standard JPEG
+   * This fixes issues with HEIC formats, massive file sizes, and rotation.
+   */
+  const compressAndFormatImage = (sourceUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Resize if too large (max 1500px)
+        const MAX_SIZE = 1500;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        // Draw and export as JPEG
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = (e) => reject(e);
+      img.src = sourceUrl;
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-      setError("File is too large. Please choose an image under 10MB.");
+    // Basic size check (50MB hard limit to prevent browser crash, we compress anyway)
+    if (file.size > 50 * 1024 * 1024) {
+      setError("File is too large.");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      setSelectedImage(base64);
-      processImage(base64);
+      const rawBase64 = e.target?.result as string;
+      try {
+        // Convert to standard JPEG before processing
+        const processedImage = await compressAndFormatImage(rawBase64);
+        setSelectedImage(processedImage);
+        // Add a slight delay to allow UI to update before heavy AI call
+        setTimeout(() => processImage(processedImage), 100);
+      } catch (err) {
+        console.error("Image processing failed:", err);
+        setError("Could not process this image format. Please try another.");
+        setLoading(false);
+      }
     };
-    reader.onerror = () => setError("Failed to read file.");
+    reader.onerror = () => {
+      setError("Failed to read file.");
+      setLoading(false);
+    };
     reader.readAsDataURL(file);
   };
 
   const startCamera = async () => {
     try {
       setError(null);
+      // Stop any existing stream first
+      stopCamera();
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'environment' // Prefer rear camera
-        } 
+          facingMode: 'environment', // Prefer rear camera
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
       });
+      
       streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Important: play() must be called, though autoPlay usually handles it
+        // Adding muted attribute in JSX is also critical for Android
+        try {
+            await videoRef.current.play();
+        } catch (e) {
+            console.error("Video play failed", e);
+        }
       }
       setIsCameraOpen(true);
     } catch (err) {
       console.error("Camera access denied:", err);
-      setError("Could not access camera. Please allow camera permissions or use the upload option.");
+      setError("Could not access camera. Please check permissions or use 'Upload Photo' to select from your camera app.");
     }
   };
 
@@ -84,23 +160,29 @@ const App: React.FC = () => {
     setIsCameraOpen(false);
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current) return;
 
     const canvas = document.createElement('canvas');
-    // Match the video dimensions
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // Flip horizontally if using front camera (optional, but standard for selfies, kept normal for rocks)
       ctx.drawImage(videoRef.current, 0, 0);
-      const base64 = canvas.toDataURL('image/jpeg', 0.85); // High quality jpeg
       
-      stopCamera();
-      setSelectedImage(base64);
-      processImage(base64);
+      try {
+        // Convert to standard format
+        const rawUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const processedImage = await compressAndFormatImage(rawUrl);
+        
+        stopCamera();
+        setSelectedImage(processedImage);
+        processImage(processedImage);
+      } catch (err) {
+        setError("Failed to capture image.");
+        stopCamera();
+      }
     }
   };
 
@@ -110,7 +192,9 @@ const App: React.FC = () => {
     setError(null);
     
     try {
-      const result = await identifyRock(base64);
+      // Extract mime type if present, otherwise default to jpeg (since we compressed it)
+      const mimeType = base64.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/)?.[1] || 'image/jpeg';
+      const result = await identifyRock(base64, mimeType);
       setAnalysis(result);
       setView(AppView.RESULTS);
     } catch (err) {
@@ -212,7 +296,8 @@ const App: React.FC = () => {
               <video 
                 ref={videoRef} 
                 autoPlay 
-                playsInline 
+                playsInline
+                muted 
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 pointer-events-none border-[1px] border-white/20 grid grid-cols-3 grid-rows-3">

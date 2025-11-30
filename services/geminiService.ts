@@ -4,7 +4,7 @@ import { RockAnalysis } from "../types.ts";
 // Initialize Gemini Client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const identifyRock = async (base64Image: string): Promise<RockAnalysis> => {
+export const identifyRock = async (base64Image: string, mimeType: string = 'image/jpeg'): Promise<RockAnalysis> => {
   try {
     const base64Data = base64Image.split(',')[1];
     
@@ -53,7 +53,7 @@ export const identifyRock = async (base64Image: string): Promise<RockAnalysis> =
         parts: [
           {
             inlineData: {
-              mimeType: 'image/jpeg', // Assuming JPEG or PNG, Gemini handles standard image types well
+              mimeType: mimeType,
               data: base64Data
             }
           },
