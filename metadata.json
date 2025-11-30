@@ -1,0 +1,7 @@
+{
+  "name": "Prospector's Pal",
+  "description": "AI-powered identification tool for rocks and minerals, helping prospectors assess potential value and composition.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
